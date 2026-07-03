@@ -91,13 +91,27 @@ function updateReminderBanner() {
     if (!banner) return;
 
     const enabled = localStorage.getItem('reminderEnabled');
-    const reminderTime = localStorage.getItem('reminderTime') || '10:00 AM';
+    const friTime = localStorage.getItem('friReminderTime');
+    const satTime = localStorage.getItem('satReminderTime');
 
     if (enabled === 'true' && Notification.permission === 'granted') {
         btn.textContent = '✓ On';
         btn.style.background = '#10B981';
-        banner.querySelector('span').textContent = `Reminder set every Saturday at ${reminderTime}`;
+        banner.querySelector('span').textContent = `Fri @ ${friTime} | Sat @ ${satTime}`;
     }
+}
+
+function parseTimeInput(timeStr) {
+    if (!timeStr) return null;
+    const [hStr, mStr] = timeStr.split(':');
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr || 0, 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    const displayTime = `${displayHour}:${String(m).padStart(2, '0')} ${ampm}`;
+    return { h, m, displayTime };
 }
 
 function setupReminder() {
@@ -106,26 +120,32 @@ function setupReminder() {
         return;
     }
 
-    const reminderTime = prompt('What time should we remind her every Saturday?\n(Type in 24h format, e.g. 10:00 for 10 AM, 14:00 for 2 PM)', '10:00');
-    if (!reminderTime) return;
+    const friInput = prompt('Step 1/2: What time should we remind her every FRIDAY to ask for availability?\n(Type in 24h format, e.g. 18:00 for 6 PM)', '18:00');
+    if (!friInput) return;
+    const fri = parseTimeInput(friInput);
+    if (!fri) return alert("Invalid time format.");
 
-    // Convert to display format
-    const [h, m] = reminderTime.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const displayHour = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-    const displayTime = `${displayHour}:${String(m).padStart(2, '0')} ${ampm}`;
+    const satInput = prompt('Step 2/2: What time should we remind her every SATURDAY to make the schedule?\n(Type in 24h format, e.g. 10:00 for 10 AM)', '10:00');
+    if (!satInput) return;
+    const sat = parseTimeInput(satInput);
+    if (!sat) return alert("Invalid time format.");
 
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
             localStorage.setItem('reminderEnabled', 'true');
-            localStorage.setItem('reminderTime', displayTime);
-            localStorage.setItem('reminderHour', h);
-            localStorage.setItem('reminderMinute', m || 0);
+            
+            localStorage.setItem('friReminderTime', fri.displayTime);
+            localStorage.setItem('friReminderHour', fri.h);
+            localStorage.setItem('friReminderMinute', fri.m);
+
+            localStorage.setItem('satReminderTime', sat.displayTime);
+            localStorage.setItem('satReminderHour', sat.h);
+            localStorage.setItem('satReminderMinute', sat.m);
 
             // Show confirmation notification immediately
-            new Notification('✅ Reminder Set!', {
-                body: `You will be reminded every Saturday at ${displayTime} to make the schedule.`,
-                icon: '📅'
+            new Notification('✅ Reminders Set!', {
+                body: `Friday at ${fri.displayTime} and Saturday at ${sat.displayTime}.`,
+                icon: '🔔'
             });
 
             updateReminderBanner();
@@ -140,12 +160,15 @@ function checkAndFireReminder() {
     if (enabled !== 'true' || Notification.permission !== 'granted') return;
 
     const now = new Date();
-    const isSaturday = now.getDay() === 6;
-    if (!isSaturday) return;
+    const day = now.getDay(); // 5 = Friday, 6 = Saturday
+    
+    if (day !== 5 && day !== 6) return;
 
-    const reminderHour = parseInt(localStorage.getItem('reminderHour') || 10);
-    const reminderMinute = parseInt(localStorage.getItem('reminderMinute') || 0);
-    const reminderTime = localStorage.getItem('reminderTime') || '10:00 AM';
+    const isFriday = day === 5;
+    const prefix = isFriday ? 'fri' : 'sat';
+
+    const reminderHour = parseInt(localStorage.getItem(`${prefix}ReminderHour`) || (isFriday ? 18 : 10));
+    const reminderMinute = parseInt(localStorage.getItem(`${prefix}ReminderMinute`) || 0);
 
     const lastFired = localStorage.getItem('reminderLastFired');
     const todayStr = now.toDateString();
@@ -153,10 +176,17 @@ function checkAndFireReminder() {
     if (lastFired === todayStr) return; // Already fired today
 
     if (now.getHours() === reminderHour && now.getMinutes() === reminderMinute) {
-        new Notification('📅 Time to make the schedule!', {
-            body: `Good morning! It's Saturday — open the Schedule Maker and set this week's shifts.`,
-            icon: '📅'
-        });
+        if (isFriday) {
+            new Notification('📋 Check Availability', {
+                body: `It's Friday! Ask employees about their availability for next week.`,
+                icon: '💬'
+            });
+        } else {
+            new Notification('📅 Make the Schedule!', {
+                body: `Good morning! It's Saturday — open the Schedule Maker and set this week's shifts.`,
+                icon: '📅'
+            });
+        }
         localStorage.setItem('reminderLastFired', todayStr);
     }
 }
@@ -191,6 +221,25 @@ function addEmployeeField(name = '', index = -1) {
     input.placeholder = 'Employee Name';
     input.value = name;
     
+    const actionContainer = document.createElement('div');
+    actionContainer.className = 'emp-actions';
+
+    const askBtn = document.createElement('button');
+    askBtn.className = 'ask-btn';
+    askBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+        </svg>
+    `;
+    askBtn.onclick = () => {
+        const empName = input.value.trim();
+        if (empName) {
+            askAvailability(empName);
+        } else {
+            alert("Please enter a name first.");
+        }
+    };
+    
     const removeBtn = document.createElement('button');
     removeBtn.className = 'remove-btn';
     removeBtn.innerHTML = '×';
@@ -198,9 +247,18 @@ function addEmployeeField(name = '', index = -1) {
         div.remove();
     };
     
+    actionContainer.appendChild(askBtn);
+    actionContainer.appendChild(removeBtn);
+
     div.appendChild(input);
-    div.appendChild(removeBtn);
+    div.appendChild(actionContainer);
     container.appendChild(div);
+}
+
+function askAvailability(empName) {
+    const msg = `Hi ${empName}! 👋 What is your availability for next week?`;
+    const encodedText = encodeURIComponent(msg);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
 }
 
 function saveEmployees() {
@@ -280,9 +338,10 @@ function saveScheduleState() {
         }
         
         const elements = [
-            `${day}-handoff`,
             `${day}-morning`,
+            `${day}-morning-end`,
             `${day}-evening1`,
+            `${day}-evening1-start`,
             `${day}-evening2`,
             `${day}-evening2-start`,
             `${day}-evening2-end`,
@@ -375,8 +434,10 @@ function buildAssignmentUI() {
         const dayBlock = document.createElement('div');
         dayBlock.className = 'assignment-day';
         
-        const handoffHtml = setSelectValue(`${day}-handoff`, timeOptionsHtml, '7:00 PM');
+        const morningEndHtml = setSelectValue(`${day}-morning-end`, timeOptionsHtml, '7:00 PM');
         const morningHtml = setSelectValue(`${day}-morning`, optionsHtml, '');
+        
+        const evening1StartHtml = setSelectValue(`${day}-evening1-start`, startTimeOptionsHtml, '7:00 PM');
         const evening1Html = setSelectValue(`${day}-evening1`, optionsHtml, '');
         
         const e2Html = setSelectValue(`${day}-evening2`, optionsHtml, '');
@@ -432,17 +493,21 @@ function buildAssignmentUI() {
         dayBlock.innerHTML = `
             <div class="assignment-header ${isWeekend ? 'weekend' : ''}">${dayEmoji} ${day}</div>
             <div class="assignment-body">
-                <div class="shift-row handoff-row">
-                    <label><span class="shift-icon">⏱️</span> Handoff Time</label>
-                    <select id="${day}-handoff" class="large-select">${handoffHtml}</select>
-                </div>
                 <div class="shift-row morning-row" style="margin-top: 0.75rem;">
-                    <label><span class="shift-icon">☀️</span> Morning Shift (10am → Handoff)</label>
+                    <label><span class="shift-icon">☀️</span> Morning Shift</label>
                     <select id="${day}-morning" class="large-select assignment-select">${morningHtml}</select>
+                    <div style="display:flex; gap: 0.5rem; margin-top: 0.5rem; align-items:center;">
+                        <span style="font-size: 0.8rem; color: var(--morning-text); font-weight:600;">Ends at:</span>
+                        <select id="${day}-morning-end" class="large-select" style="padding: 0.5rem; font-size: 0.9rem; background:#FFFDF0; border-color: var(--morning-border); color: var(--morning-text);">${morningEndHtml}</select>
+                    </div>
                 </div>
                 <div class="shift-row evening-row" style="margin-top: 0.75rem;">
-                    <label><span class="shift-icon">🌙</span> Evening Shift 1 (Handoff → 5am)</label>
+                    <label><span class="shift-icon">🌙</span> Evening Shift 1</label>
                     <select id="${day}-evening1" class="large-select assignment-select">${evening1Html}</select>
+                    <div style="display:flex; gap: 0.5rem; margin-top: 0.5rem; align-items:center;">
+                        <span style="font-size: 0.8rem; color: var(--evening-text); font-weight:600;">Starts at:</span>
+                        <select id="${day}-evening1-start" class="large-select" style="padding: 0.5rem; font-size: 0.9rem; background:#F0F1FF; border-color: var(--evening-border); color: var(--evening-text);">${evening1StartHtml}</select>
+                    </div>
                 </div>
                 ${toggleHtml}
             </div>
@@ -475,7 +540,8 @@ function buildAssignmentUI() {
         attachChange(`${day}-evening1`);
         attachChange(`${day}-evening2`);
         attachChange(`${day}-evening3`);
-        attachChange(`${day}-handoff`, true);
+        attachChange(`${day}-morning-end`, true);
+        attachChange(`${day}-evening1-start`, true);
         attachChange(`${day}-evening2-start`, true);
         attachChange(`${day}-evening2-end`, true);
         attachChange(`${day}-evening3-start`, true);
@@ -535,8 +601,9 @@ function generateAndGo() {
     generatedSchedule = {};
 
     days.forEach(day => {
-        const handoff = document.getElementById(`${day}-handoff`).value;
+        const morningEnd = document.getElementById(`${day}-morning-end`).value;
         const morning = document.getElementById(`${day}-morning`).value;
+        const evening1Start = document.getElementById(`${day}-evening1-start`).value;
         const evening1 = document.getElementById(`${day}-evening1`).value;
         
         generatedSchedule[day] = {
@@ -548,7 +615,7 @@ function generateAndGo() {
                 emp: morning,
                 type: 'Morning',
                 start: '10:00 AM',
-                end: handoff
+                end: morningEnd
             });
         }
         
@@ -556,7 +623,7 @@ function generateAndGo() {
             generatedSchedule[day].shifts.push({
                 emp: evening1,
                 type: 'Evening 1',
-                start: handoff,
+                start: evening1Start,
                 end: '5:00 AM'
             });
         }

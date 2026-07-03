@@ -168,6 +168,29 @@ h2 {
     flex: 1;
 }
 
+.emp-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ask-btn {
+    background: #DCFCE7;
+    color: #16A34A;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ask-btn:hover {
+    background: #BBF7D0;
+}
+
 .remove-btn {
     background: #FEE2E2;
     color: #EF4444;
