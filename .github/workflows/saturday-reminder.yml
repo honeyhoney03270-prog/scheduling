@@ -2,8 +2,8 @@ name: Saturday Telegram Reminder
 
 on:
   schedule:
-    # 10:00 AM PDT is 5:00 PM UTC on Saturday
-    - cron: '0 17 * * 6'
+    # 1:00 AM PDT (Saturday) is 8:00 AM UTC on Saturday
+    - cron: '0 8 * * 6'
   workflow_dispatch: # Allows manual testing from GitHub Actions tab
 
 jobs:
