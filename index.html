@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Easy Schedule Maker</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>Schedule Maker</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="step-indicator" id="step-indicator">Step 1 of 3</div>
+        </header>
+
+        <!-- Wizard Container -->
+        <main class="wizard-container">
+            
+            <!-- STEP 1: Employees -->
+            <section class="wizard-step active" id="step-1">
+                <div class="step-content">
+                    <h2>Who is working this week?</h2>
+                    <p class="subtitle">Set your team members. You can add or remove people at any time!</p>
+                    
+                    <div id="employee-list-container">
+                        <!-- Dynamic inputs go here -->
+                    </div>
+
+                    <button class="btn btn-outline btn-block mt-4" onclick="addEmployeeField()">+ Add Another Employee</button>
+
+                    <!-- Reminder Banner -->
+                    <div class="reminder-banner" id="reminder-banner">
+                        <div class="reminder-icon">🔔</div>
+                        <div class="reminder-text">
+                            <strong>Never forget to schedule!</strong>
+                            <span>Get a reminder every Saturday morning.</span>
+                        </div>
+                        <button class="reminder-btn" id="reminder-btn" onclick="setupReminder()">Turn On</button>
+                    </div>
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-block" onclick="nextStep(1)">Next Step →</button>
+                </div>
+            </section>
+
+            <!-- STEP 2: Shift Builder -->
+            <section class="wizard-step" id="step-2">
+                <div class="step-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>Shift Builder</h2>
+                        <button class="btn btn-outline" style="padding: 0.5rem; font-size: 0.8rem;" onclick="clearSchedule()">Clear All</button>
+                    </div>
+                    <p class="subtitle">Set the exact schedule for each day.</p>
+                    
+                    <div id="assignment-container">
+                        <!-- Populated dynamically by script.js -->
+                    </div>
+
+                </div>
+                <div class="step-actions split">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">← Back</button>
+                    <button class="btn btn-primary generate-btn" onclick="generateAndGo()">Generate!</button>
+                </div>
+            </section>
+
+            <!-- STEP 3: Results -->
+            <section class="wizard-step" id="step-3">
+                <div class="step-content">
+                    <div class="success-header">
+                        <h2>🎉 Schedule Ready!</h2>
+                        <p>Tap a button below to copy the schedule for each person.</p>
+                    </div>
+
+                    <div id="results-container" class="results-list">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <button class="btn btn-outline btn-block mt-4" id="view-master-btn">View Master Table</button>
+                    
+                    <div id="master-table-container" class="master-table-wrapper" style="display: none;">
+                        <table class="mobile-table" id="master-table">
+                            <!-- Populated by JS -->
+                        </table>
+                    </div>
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-secondary btn-block" onclick="startOver()">Start Over</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Copied to clipboard!</div>
+
+    <script src="script.js"></script>
+    <script>
+        // Register Service Worker for Saturday reminders
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
