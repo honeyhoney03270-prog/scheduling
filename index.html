@@ -33,15 +33,17 @@
 
                     <button class="btn btn-outline btn-block mt-4" onclick="addEmployeeField()">+ Add Another Employee</button>
 
-                    <!-- Reminder Banner -->
-                    <div class="reminder-banner" id="reminder-banner">
-                        <div class="reminder-icon">🔔</div>
-                        <div class="reminder-text">
-                            <strong>Never forget to schedule!</strong>
-                            <span>Get reminders on Friday & Saturday.</span>
+                    <!-- Telegram Reminder Banner -->
+                    <a href="https://t.me/honeyhoney_schedule_bot" target="_blank" style="text-decoration: none;">
+                        <div class="reminder-banner" id="reminder-banner">
+                            <div class="reminder-icon">💬</div>
+                            <div class="reminder-text">
+                                <strong>Get Reminders on Telegram!</strong>
+                                <span>Get a push notification every Fri & Sat.</span>
+                            </div>
+                            <div class="reminder-btn">Subscribe</div>
                         </div>
-                        <button class="reminder-btn" id="reminder-btn" onclick="setupReminder()">Turn On</button>
-                    </div>
+                    </a>
                 </div>
                 <div class="step-actions">
                     <button class="btn btn-primary btn-block" onclick="nextStep(1)">Next Step →</button>
@@ -98,12 +100,6 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast">Copied to clipboard!</div>
 
-    <script src="script.js?v=2"></script>
-    <script>
-        // Register Service Worker for Saturday reminders
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
-        }
-    </script>
+    <script src="script.js?v=3"></script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+name: Friday Telegram Reminder
+
+on:
+  schedule:
+    # 6:00 PM PDT is 1:00 AM UTC on Saturday
+    - cron: '0 1 * * 6'
+  workflow_dispatch: # Allows manual testing from GitHub Actions tab
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram Message
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+          -d text="📋 It's Friday! Ask employees about their availability for next week."
