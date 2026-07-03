@@ -674,7 +674,7 @@ function renderResults() {
     document.body.appendChild(rawTextContainer);
 
     employeeData.forEach((emp, index) => {
-        let schedString = `Hi ${emp}! Here is your schedule for this week:\n\n`;
+        let schedString = `Hi ${emp}! Here is your schedule for next week:\n\n`;
         let hasShifts = false;
         
         let totalDays = 0;
